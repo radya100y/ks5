@@ -15,6 +15,8 @@ import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 @EnableKafka
 @EnableKafkaStreams
@@ -35,9 +37,10 @@ public class Ks5Service {
         KStream<String, User> userStream = kStreamBuilder
                 .stream("src", Consumed.with(Serdes.String(), Serdes.String()))
                 .mapValues(Ks5Mapper::getUserFromString)
-                .filter((key, value) -> value != null)
+                .mapValues((key, value) -> value.orElseThrow(() -> new RuntimeException("xz")))
                 .filter((key, value) -> value.getBalance() != null)
                 .filter((key, value) -> value.getBalance() <= 0);
+
 
         userStream.to("out", Produced.with(Serdes.String(), userSerde()));
         return userStream;
